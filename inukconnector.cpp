@@ -68,8 +68,11 @@ void InukConnector::readData()
 {
     const QByteArray data = serialHandler->readAll();
     QString msg = QString(data);
-    msg.replace("\r\n", "");
-    qDebug() << "uart-rx: " << msg;
+    msg.replace("\r\n", "");    // remove line-feed
+//    msg.replace("\"", "@");      // remove char
+//    msg.replace("@", QString('A'));      // remove char
+
+    cmdHandler.handleRawMessage(msg);
 }
 
 void InukConnector::handleError(QSerialPort::SerialPortError error)

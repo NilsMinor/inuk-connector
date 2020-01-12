@@ -20,23 +20,25 @@ ConnectionSetting::Settings ConnectionSetting::getSettings()
     return this->settings;
 }
 
-void ConnectionSetting::loadFromJson(QString path)
+void ConnectionSetting::loadFromJson( )
 {
+    QFile file;
+    QString path = QDir::currentPath() + CONNECTION_FILE_PATH;
+    file.setFileName(path);
+    file.open(QIODevice::ReadOnly | QIODevice::Text);
+    if (file.isOpen()) {
+        QString val = file.readAll();
+        file.close();
+
+        qDebug() << val;
+    } else {
+        qDebug() << "error - no valid setting in file " << path;
+    }
 
 }
 
 void ConnectionSetting::saveToJson(QString path)
 {
+    Q_UNUSED(path);
 
-
-}
-
-QDataStream & operator>>(QDataStream &in, ConnectionSetting::Settings &s) {
-    in >> s;
-    return in;
-}
-
-QDataStream & operator << (QDataStream& out, ConnectionSetting::Settings & s) {
-    out << s;
-    return out;
 }

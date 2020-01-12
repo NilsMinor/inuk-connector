@@ -3,6 +3,7 @@ QT += serialport widgets
 
 CONFIG += c++11 console
 CONFIG -= app_bundle
+CONFIG += sdk_no_version_check
 
 # The following define makes your compiler emit warnings if you use
 # any Qt feature that has been marked deprecated (the exact warnings
@@ -17,6 +18,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
         connectionsetting.cpp \
+        inukcommandhandler.cpp \
         inukconnector.cpp \
         main.cpp
 
@@ -27,4 +29,9 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 HEADERS += \
     connectionsetting.h \
+    inukcommandhandler.h \
     inukconnector.h
+
+DISTFILES += \
+    README.md \
+    config/connection.json

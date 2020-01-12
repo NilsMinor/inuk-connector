@@ -6,6 +6,7 @@
 #include <QSerialPort>
 #include <QTimer>
 #include "connectionsetting.h"
+#include "inukcommandhandler.h"
 
 #define RECONNECTION_INTERVALL 1000
 
@@ -19,6 +20,7 @@ public:
 private:
     ConnectionSetting *settingsHandler;
     QSerialPort *serialHandler = nullptr;
+    InukCommandHandler cmdHandler;
     QTimer *reconnectTimer;
     void openSerialPort(ConnectionSetting::Settings s);
     void closeSerialPort();

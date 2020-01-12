@@ -5,6 +5,10 @@
 #include <QSerialPort>
 #include <QSerialPortInfo>
 #include <QDataStream>
+#include <QFile>
+#include <QDebug>
+#include <QDir>
+#define CONNECTION_FILE_PATH "config/connection.json"
 
 class ConnectionSetting
 {
@@ -22,11 +26,8 @@ public:
     ConnectionSetting::Settings getSettings ();
 private :
     Settings settings;
-    void loadFromJson (QString path);
+    void loadFromJson ();
     void saveToJson (QString path);
-    friend QDataStream &operator<<(QDataStream& out, const ConnectionSetting::Settings & s);
-    friend QDataStream &operator>>(QDataStream& in, ConnectionSetting::Settings & s);
-
 };
 
 #endif // CONNECTIONSETTING_H
