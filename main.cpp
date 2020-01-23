@@ -1,6 +1,7 @@
 #include <QCoreApplication>
 #include <QDebug>
 #include "inukconnector.h"
+#include <inukmqtt.h>
 
 int main(int argc, char *argv[])
 {

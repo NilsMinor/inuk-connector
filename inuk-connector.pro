@@ -1,5 +1,5 @@
 QT -= gui
-QT += serialport widgets
+QT += core serialport widgets qmqtt network
 
 CONFIG += c++11 console
 CONFIG -= app_bundle
@@ -20,7 +20,11 @@ SOURCES += \
         connectionsetting.cpp \
         inukcommandhandler.cpp \
         inukconnector.cpp \
-        main.cpp
+        inukmqtt.cpp \
+        main.cpp \
+        message-types/messagetype.cpp \
+        message-types/statusmessage.cpp \
+        qtjsonhandler.cpp
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
@@ -30,7 +34,11 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 HEADERS += \
     connectionsetting.h \
     inukcommandhandler.h \
-    inukconnector.h
+    inukconnector.h \
+    inukmqtt.h \
+    message-types/messagetype.h \
+    message-types/statusmessage.h \
+    qtjsonhandler.h
 
 DISTFILES += \
     README.md \

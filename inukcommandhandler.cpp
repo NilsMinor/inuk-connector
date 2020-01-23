@@ -1,8 +1,14 @@
 #include "inukcommandhandler.h"
 #include <QObject>
+#include "qtjsonhandler.h"
+
 InukCommandHandler::InukCommandHandler(QObject *parent) : QObject(parent)
 {
+    periodicTimer = new QTimer(this);
+    connect(periodicTimer, &QTimer::timeout, this, &InukCommandHandler::periodicCallback);
+    periodicTimer->start(1000);
 
+     mqtt = new InukMQTT();
 }
 
 QString InukCommandHandler::parseRawMessage(QString msg)
@@ -14,38 +20,20 @@ QString InukCommandHandler::parseRawMessage(QString msg)
 void InukCommandHandler::handleRawMessage(QString msg)
 {
     //qDebug() << "handle msg : " << msg;
-    QJsonObject obj = ObjectFromString(msg);
-    QVariantMap map = obj.toVariantMap();
+    QtJsonHandler j;
+    QJsonObject obj = j.stringToObject(msg);
+
     if (!obj.isEmpty()) {
-        qDebug() << map;
+        qDebug() << obj;
+        mqtt->sendString(msg);
     }else {
-        //qDebug() << "handle msg : " << msg;
+     //    qDebug() << "handle msg : " << msg;
     }
 }
 
-QJsonObject InukCommandHandler::ObjectFromString(const QString& in)
+void InukCommandHandler::periodicCallback()
 {
-    QJsonObject obj;
-
-    QJsonDocument doc = QJsonDocument::fromJson(in.toUtf8());
-
-    // check validity of the document
-    if(!doc.isNull())
-    {
-        if(doc.isObject())
-        {
-            obj = doc.object();
-        }
-        else
-        {
-            qDebug() << "Document is not an object" << endl;
-        }
-    }
-    else
-    {
-        // qDebug() << "Invalid JSON...\n" << in << endl;
-    }
-
-    return obj;
+    emit sendMessage("get_config this adv");
 }
+
 

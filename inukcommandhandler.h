@@ -5,6 +5,8 @@
 #include <QDebug>
 #include <QJsonObject>
 #include <QJsonDocument>
+#include <QTimer>
+#include "inukmqtt.h"
 
 class InukCommandHandler : public QObject
 {
@@ -14,12 +16,15 @@ public:
 
 private :
     QString parseRawMessage (QString msg);
-    QJsonObject ObjectFromString(const QString& in);
+    QTimer * periodicTimer;
+    InukMQTT * mqtt;
 
 signals:
+    void sendMessage(const QByteArray &data);
 
 public slots:
     void handleRawMessage (QString msg);
+    void periodicCallback();
 };
 
 #endif // INUKCOMMANDHANDLER_H

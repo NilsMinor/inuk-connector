@@ -20,17 +20,18 @@ public:
 private:
     ConnectionSetting *settingsHandler;
     QSerialPort *serialHandler = nullptr;
-    InukCommandHandler cmdHandler;
+    InukCommandHandler *cmdHandler;
     QTimer *reconnectTimer;
+
     void openSerialPort(ConnectionSetting::Settings s);
     void closeSerialPort();
-    void writeData(const QByteArray &data);
     void readData();
     void handleError(QSerialPort::SerialPortError error);
 
 signals:
 
 public slots:
+    void writeData(const QByteArray &data);
     void scannConnection ();
 };
 

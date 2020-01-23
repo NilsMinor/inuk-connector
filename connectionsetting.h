@@ -8,14 +8,18 @@
 #include <QFile>
 #include <QDebug>
 #include <QDir>
+#include "qtjsonhandler.h"
+
+
 #define CONNECTION_FILE_PATH "config/connection.json"
+#define LOCAL_CONFIG_FILE "/Users/nilsminor/Documents/inuit/inuk-connector/inuk-connector/config/connection.json"
 
 class ConnectionSetting
 {
 public:
     ConnectionSetting();
     struct Settings {
-        QString name;
+        QString portName;
         QSerialPort::BaudRate baudRate;
         QSerialPort::DataBits dataBits;
         QSerialPort::Parity parity;
@@ -26,7 +30,8 @@ public:
     ConnectionSetting::Settings getSettings ();
 private :
     Settings settings;
-    void loadFromJson ();
+    void loadFromJson (bool local);
+    Settings jsonToSettings (QJsonObject json);
     void saveToJson (QString path);
 };
 

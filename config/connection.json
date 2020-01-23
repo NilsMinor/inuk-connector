@@ -1,3 +1,9 @@
 {
-    "test": 1
+    "portName" : "/dev/tty*",
+    "baudRate" : 115200,
+    "dataBits" : 8,
+    "parity" : "none",
+    "stopBits" : 1,
+    "flowControl" : true,
+    "localEchoEnabled" : false
 }
