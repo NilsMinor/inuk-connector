@@ -5,25 +5,36 @@
 #include "qmqtt.h"
 #include <QTimer>
 #include <QDebug>
+#include <QLoggingCategory>
 
-const QString EXAMPLE_HOST = QStringLiteral("test.mosquitto.org");
-const quint16 EXAMPLE_PORT = 1883;
-const QString EXAMPLE_TOPIC = "/inuk/testtopic";
+const QString HOST_NAME = QStringLiteral("test.mosquitto.org");
+const quint16 PORT = 1883;
+
+const QString MAIN_TOPIC            = "inuit";
+const QString GW_NAME               = "0001";
+const QString GW_STATUS_TOPIC       = "status";
+const QString NODE_TOPIC            = "nodes";
 
 class InukMQTT : public QObject
 {
-
     Q_OBJECT
 public:
     explicit InukMQTT(QObject *parent = nullptr);
     ~InukMQTT();
 
-    QMQTT::Client *client;
-    QTimer *timer;
-    void init (void);
-    quint16 number = 0;
+    void publish(QString topic, QString msg);
+    void startConnecting(qint16 timeout = 1000);
 
+private :
+    QMQTT::Client *client;
+    QTimer *reconnectTimer;
+    void conectToHost ();
 signals:
+    void started ();
+    void errorOccured (QString error);
+    void connected (QString hostName);
+    void disconnected (QString hostName);
+    void receivedMessage (QString &msg);
 
 public slots:
 

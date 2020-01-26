@@ -1,5 +1,10 @@
 #include "connectionsetting.h"
 
+#include <QLoggingCategory>
+#define LOGGING_CAT QLoggingCategory("inuk.serial.settings")
+#define DEBUG       qDebug(LOGGING_CAT)
+#define WARN        qWarning(LOGGING_CAT)
+
 ConnectionSetting::ConnectionSetting()
 {
  this->settings = {
@@ -38,10 +43,10 @@ void ConnectionSetting::loadFromJson(bool local)
 
         QtJsonHandler j;
         QJsonObject json =  j.stringToObject(content);
-        qDebug() << json["portName"].toString();
+        DEBUG << json["portName"].toString();
 
     } else {
-        qDebug() << "error - no valid setting in file " << path;
+        WARN << "error - no valid setting in file " << path;
     }
 }
 
@@ -52,7 +57,6 @@ ConnectionSetting::Settings ConnectionSetting::jsonToSettings(QJsonObject json)
         // TODO implement rest
         this->settings.localEchoEnabled = json["localEchoEnabled"].toBool();
     }
-
 }
 
 void ConnectionSetting::saveToJson(QString path)

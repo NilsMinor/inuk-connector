@@ -1,88 +1,91 @@
 #include "inukconnector.h"
 
+#include <QLoggingCategory>
+#define LOGGING_CAT QLoggingCategory("inuk.con")
+#define DEBUG       qDebug(LOGGING_CAT)
+#define WARN        qWarning(LOGGING_CAT)
+
 InukConnector::InukConnector(QObject *parent) : QObject(parent)
 {
-    this->settingsHandler = new ConnectionSetting();
-    serialHandler = new QSerialPort(this);
-    reconnectTimer = new QTimer(this);
-    this->cmdHandler = new InukCommandHandler(this);
+    // init serial connector
+    serial = new InukSerial();
 
-    connect(reconnectTimer, &QTimer::timeout, this, &InukConnector::scannConnection);
-    connect(serialHandler, &QSerialPort::errorOccurred, this, &InukConnector::handleError);
-    connect(serialHandler, &QSerialPort::readyRead, this, &InukConnector::readData);
-    connect(cmdHandler, &InukCommandHandler::sendMessage, this, &InukConnector::writeData);
+    connect(serial, &InukSerial::started, this, &InukConnector::serialStarted);
+    connect(serial, &InukSerial::connected, this, &InukConnector::serialConnected);
+    connect(serial, &InukSerial::disconnected, this, &InukConnector::serialDisconnected);
 
-    this->reconnectTimer->start(RECONNECTION_INTERVALL);
+    // init mqtt connector
+    mqtt = new InukMQTT();
+    connect(mqtt, &InukMQTT::started, this, &InukConnector::mqttStarted);
+    connect(mqtt, &InukMQTT::connected, this, &InukConnector::mqttConnected);
+    connect(mqtt, &InukMQTT::disconnected, this, &InukConnector::mqttDisconnected);
+    connect(mqtt, &InukMQTT::errorOccured, this, &InukConnector::mqttError);
+
+    cmd = new InukCommandHandler();
+
+    connect(serial, &InukSerial::receivedData, cmd, &InukCommandHandler::handleRawMessage);
+    connect(cmd, &InukCommandHandler::messsageHandledString, this, &InukConnector::printMessage);
+    connect(cmd, &InukCommandHandler::messsageHandledJson, this, &InukConnector::printJSON);
+
+    mqtt->startConnecting();
+    serial->startScanning();
+
+    DEBUG << "initialization done";
 }
 
 InukConnector::~InukConnector()
 {
-    this->closeSerialPort();
-    delete serialHandler;
+
 }
 
-void InukConnector::scannConnection()
+//
+// SERIAL
+//
+void InukConnector::serialStarted( ) {
+    DEBUG << "serial started scanning";
+    mqtt->publish("status", "serial-scanning");
+}
+void InukConnector::serialConnected(QString portName) {
+    DEBUG << "serial connected to " << portName;
+    mqtt->publish("status", "serial-connected");
+}
+void InukConnector::serialDisconnected(QString portName) {
+    DEBUG << "serial disconnected from " << portName;
+    mqtt->publish("status", "serial-disconnected");
+}
+
+//
+// MQTT
+//
+
+void InukConnector::mqttStarted () {
+    DEBUG << "mqtt started";
+}
+void InukConnector::mqttConnected (QString hostName) {
+     DEBUG << "mqtt connected to " << hostName;
+}
+void InukConnector::mqttError (QString error) {
+     DEBUG << "mqtt error " << error;
+}
+void InukConnector::mqttDisconnected(QString hostName) {
+    DEBUG << "mqtt disconnected from " << hostName;
+}
+
+void InukConnector::printMessage(QString &msg)
 {
-    if (settingsHandler) {
-         qDebug() << "Try to connect to : " << settingsHandler->getSettings().portName;
-         if(!serialHandler->isOpen()) {
-             this->openSerialPort(settingsHandler->getSettings());
-         }
-         else {
-
-         }
-    }
+    DEBUG << "Message is : " << msg;
 }
-
-void InukConnector::openSerialPort(ConnectionSetting::Settings s)
+void InukConnector::printJSON(QJsonObject &json)
 {
-    if (s.portName != "") {
-        serialHandler->setPortName(s.portName);
-        serialHandler->setBaudRate(s.baudRate);
-        serialHandler->setDataBits(s.dataBits);
-        serialHandler->setParity(s.parity);
-        serialHandler->setStopBits(s.stopBits);
-        serialHandler->setFlowControl(s.flowControl);
-        if (serialHandler->open(QIODevice::ReadWrite)) {
-            this->reconnectTimer->stop();
-            qDebug() << "connected to : " << s.portName;
-        } else {
-            qDebug() << "error can't connect to " << s.portName;
-        }
-    }
-
+    DEBUG << "JSON is : " << json;
 }
 
-void InukConnector::closeSerialPort()
+void InukConnector::restart()
 {
-    if (serialHandler->isOpen())
-        serialHandler->close();
-
-    this->reconnectTimer->start(RECONNECTION_INTERVALL);
+    DEBUG << "restart application";
+    // qApp->exit(EXIT_CODE_REBOOT);
+    qApp->quit();
+    QProcess::startDetached(qApp->arguments()[0], qApp->arguments());
 }
 
-void InukConnector::writeData(const QByteArray &data)
-{
-    qDebug() << "uart-tx: " << data;
-    QString msg = QString(data) + "\r\n";
-    serialHandler->write(data+ "\r");
-}
-
-void InukConnector::readData()
-{
-    const QByteArray data = serialHandler->readAll();
-    QString msg = QString(data);
-    msg.replace("\r\n", "");    // remove line-feed
-//    msg.replace("\"", "@");      // remove char
-//    msg.replace("@", QString('A'));      // remove char
-    cmdHandler->handleRawMessage(msg);
-}
-
-void InukConnector::handleError(QSerialPort::SerialPortError error)
-{
-    if (error == QSerialPort::ResourceError) {
-        qDebug() << "error handler: " << error;
-        closeSerialPort();
-    }
-}
 

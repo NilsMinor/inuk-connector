@@ -1,5 +1,11 @@
 #include "qtjsonhandler.h"
 
+#include <QLoggingCategory>
+#define LOGGING_CAT QLoggingCategory("inuk.json")
+#define DEBUG       qDebug(LOGGING_CAT)
+#define WARN        qWarning(LOGGING_CAT)
+
+
 QtJsonHandler::QtJsonHandler(QObject *parent) : QObject(parent)
 {
 
@@ -17,7 +23,7 @@ QJsonObject QtJsonHandler::stringToObject(const QString& in)
             obj = doc.object();
         }
         else {
-            qDebug() << "Document is not an object" << endl;
+            DEBUG << "Document is not an object" << endl;
         }
     }
     else {

@@ -5,10 +5,12 @@
 #include <QDebug>
 #include <QSerialPort>
 #include <QTimer>
-#include "connectionsetting.h"
-#include "inukcommandhandler.h"
+#include <QApplication>
+#include <QProcess>
 
-#define RECONNECTION_INTERVALL 1000
+
+#include "inukserial.h"
+#include "inukcommandhandler.h"
 
 class InukConnector : public QObject
 {
@@ -17,22 +19,32 @@ public:
     explicit InukConnector(QObject *parent = nullptr);
     ~InukConnector();
 
-private:
-    ConnectionSetting *settingsHandler;
-    QSerialPort *serialHandler = nullptr;
-    InukCommandHandler *cmdHandler;
-    QTimer *reconnectTimer;
+    static int const EXIT_CODE_REBOOT = -110;
 
-    void openSerialPort(ConnectionSetting::Settings s);
-    void closeSerialPort();
-    void readData();
-    void handleError(QSerialPort::SerialPortError error);
+private:
+
+    InukCommandHandler *    cmd;
+    InukSerial *            serial;
+    InukMQTT *              mqtt;
 
 signals:
 
 public slots:
-    void writeData(const QByteArray &data);
-    void scannConnection ();
+    void printMessage (QString &msg);
+    void printJSON (QJsonObject &json);
+
+    void restart ();
+
+    // serial
+    void serialStarted( );
+    void serialConnected(QString portName);
+    void serialDisconnected(QString portName);
+
+    // mqtt
+    void mqttStarted ();
+    void mqttConnected (QString hostName);
+    void mqttError (QString error);
+    void mqttDisconnected(QString hostanem);
 };
 
 #endif // INUKCONNECTOR_H

@@ -1,28 +1,27 @@
 #include "inukmqtt.h"
 
+#include <QLoggingCategory>
+#define LOGGING_CAT QLoggingCategory("inuk.mqtt")
+#define DEBUG       qDebug(LOGGING_CAT)
+#define WARN        qWarning(LOGGING_CAT)
+
 InukMQTT::InukMQTT(QObject *parent) : QObject(parent)
 {
-    QHostAddress host;
-    host.setAddress(QStringLiteral("test.mosquitto.org"));
-
     client = new QMQTT::Client;
-    //client->setClientId("clientId");
-    //client->setUsername("name");
-    //client->setPassword("password");
-    client->setHostName(EXAMPLE_HOST);
+    client->setHostName(HOST_NAME);
     client->setPort(1883);
-    client->connectToHost();
-    //connect(client, SIGNAL(subscribed(QString,quint8)), this, SLOT(slotSubcribedSuccess(QString))); connect(client, SIGNAL(received(QMQTT::Message)), this, SLOT(slotShowMessage(QMQTT::Message)));
-//    connect(sendButton, SIGNAL(clicked()), this, SLOT(slotSendButton()));
+
+
     connect(client, SIGNAL(connected()), this, SLOT(onConnected()));
     connect(client, SIGNAL(subscribed(QString)), this, SLOT(onSubscribed(QString)));
     connect(client, SIGNAL(received(QMQTT::Message)), this, SLOT(onReceived(QMQTT::Message)));
     connect(client, SIGNAL(error(QMQTT::ClientError)), this, SLOT(onError(QMQTT::ClientError)));
 
+    reconnectTimer = new QTimer(this);
+    connect(reconnectTimer, &QTimer::timeout, this, &InukMQTT::conectToHost);
 
-    timer = new QTimer(this);
-    connect(timer, &QTimer::timeout, this, &InukMQTT::sendMessage);
-    //this->timer->start(2000);
+    startConnecting ();
+
 }
 
 InukMQTT::~InukMQTT()
@@ -32,47 +31,73 @@ InukMQTT::~InukMQTT()
     }
 }
 
+void InukMQTT::startConnecting(qint16 timeout)
+{
+    emit started();
+    DEBUG << "start timer with timeout : " << timeout;
+    this->reconnectTimer->start(timeout);
+}
+
+void InukMQTT::conectToHost()
+{
+    if (!client->isConnectedToHost()) {
+        DEBUG << "try to connect to " << client->hostName();
+        client->connectToHost();
+    }
+}
+
+
+
 void InukMQTT::onConnected()
 {
-    qDebug() << "MQTT is now connected to host " << client->hostName();
-    client->subscribe("/inuk/rec");
+    reconnectTimer->stop();
+    DEBUG << "MQTT is now connected to host " << client->hostName();
+    emit connected(client->hostName());
+
+    client->subscribe( '/' + MAIN_TOPIC + '/' + GW_NAME + '/' + "action");
 }
 
 void InukMQTT::onError(const QMQTT::ClientError error)
 {
-    qDebug() << "MQTT error " << error;
-
+    QString err = "MQTT error " + QString(error);
+    DEBUG << err;
+    emit errorOccured(err);
 }
 
 void InukMQTT::onSubscribed(const QString &topic)
 {
-    qDebug() << "MQTT subscribed to topic " << topic << endl;
+    DEBUG << "subscribed to topic " << topic;
 }
 
 void InukMQTT::onReceived(const QMQTT::Message &message)
 {
-    qDebug() << "MQTT publish received: \"" << QString::fromUtf8(message.payload()) << "\"" << endl;
+    DEBUG << "received: [" << message.topic() << "]" << QString::fromUtf8(message.payload()) ;
 }
 
 
 
 void InukMQTT::sendMessage()
 {
-    if (client->isConnectedToHost()) {
-        QMQTT::Message message(number, EXAMPLE_TOPIC, QString("Number is %1").arg(number).toUtf8());
-        client->publish(message);
-        number++;
-    } else {
-        client->connectToHost();
-        qDebug() << "MQTT not connected to host";
-    }
+//    if (client->isConnectedToHost()) {
+//        QMQTT::Message message(number, EXAMPLE_TOPIC, QString("Number is %1").arg(number).toUtf8());
+//        client->publish(message);
+//        number++;
+//    } else {
+//        client->connectToHost();
+//        DEBUG << "MQTT not connected to host";
+//    }
 }
-
-
 
 void InukMQTT::sendString(QString obj)
 {
-    QMQTT::Message message(1, EXAMPLE_TOPIC,
-                                   QString(obj).toUtf8());
+    // QMQTT::Message message(1, EXAMPLE_TOPIC, QString(obj).toUtf8());
+    // client->publish(message);
+}
+
+void InukMQTT::publish(QString topic, QString msg)
+{
+    QString _topic = '/' + MAIN_TOPIC + '/' + GW_NAME + '/' + topic;
+    DEBUG << "send [" << _topic << "]: " << msg;
+    QMQTT::Message message(1, _topic, QString(msg).toUtf8());
     client->publish(message);
 }

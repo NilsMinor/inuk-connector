@@ -8,6 +8,10 @@
 #include <QTimer>
 #include "inukmqtt.h"
 
+
+#define GATEWAY_ID      "this"
+#define ALL_ID          "0"
+
 class InukCommandHandler : public QObject
 {
     Q_OBJECT
@@ -17,13 +21,14 @@ public:
 private :
     QString parseRawMessage (QString msg);
     QTimer * periodicTimer;
-    InukMQTT * mqtt;
 
 signals:
     void sendMessage(const QByteArray &data);
+    void messsageHandledString(QString &msg);
+    void messsageHandledJson(QJsonObject &json);
 
 public slots:
-    void handleRawMessage (QString msg);
+    void handleRawMessage (QString &msg);
     void periodicCallback();
 };
 

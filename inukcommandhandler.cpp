@@ -2,13 +2,18 @@
 #include <QObject>
 #include "qtjsonhandler.h"
 
+#include <QLoggingCategory>
+#define LOGGING_CAT QLoggingCategory("inuk.cmd")
+#define DEBUG       qDebug(LOGGING_CAT)
+#define WARN        qWarning(LOGGING_CAT)
+
 InukCommandHandler::InukCommandHandler(QObject *parent) : QObject(parent)
 {
     periodicTimer = new QTimer(this);
     connect(periodicTimer, &QTimer::timeout, this, &InukCommandHandler::periodicCallback);
     periodicTimer->start(1000);
 
-     mqtt = new InukMQTT();
+
 }
 
 QString InukCommandHandler::parseRawMessage(QString msg)
@@ -17,17 +22,16 @@ QString InukCommandHandler::parseRawMessage(QString msg)
 
 }
 
-void InukCommandHandler::handleRawMessage(QString msg)
+void InukCommandHandler::handleRawMessage(QString &msg)
 {
-    //qDebug() << "handle msg : " << msg;
     QtJsonHandler j;
     QJsonObject obj = j.stringToObject(msg);
 
     if (!obj.isEmpty()) {
-        qDebug() << obj;
-        mqtt->sendString(msg);
+        emit messsageHandledJson(obj);
+
     }else {
-     //    qDebug() << "handle msg : " << msg;
+        emit messsageHandledString(msg);
     }
 }
 

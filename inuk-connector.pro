@@ -21,9 +21,8 @@ SOURCES += \
         inukcommandhandler.cpp \
         inukconnector.cpp \
         inukmqtt.cpp \
+        inukserial.cpp \
         main.cpp \
-        message-types/messagetype.cpp \
-        message-types/statusmessage.cpp \
         qtjsonhandler.cpp
 
 # Default rules for deployment.
@@ -36,8 +35,7 @@ HEADERS += \
     inukcommandhandler.h \
     inukconnector.h \
     inukmqtt.h \
-    message-types/messagetype.h \
-    message-types/statusmessage.h \
+    inukserial.h \
     qtjsonhandler.h
 
 DISTFILES += \
