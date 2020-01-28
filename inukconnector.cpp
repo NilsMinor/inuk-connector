@@ -38,6 +38,11 @@ InukConnector::~InukConnector()
 
 }
 
+void InukConnector::cbTest(QString msg)
+{
+    DEBUG << "Callback : " << msg;
+}
+
 //
 // SERIAL
 //
@@ -63,6 +68,9 @@ void InukConnector::mqttStarted () {
 }
 void InukConnector::mqttConnected (QString hostName) {
      DEBUG << "mqtt connected to " << hostName;
+
+     mqtt->registerNodeTopic("test", cbTest);
+     mqtt->registerGatewayTopic("restart", restart);
 }
 void InukConnector::mqttError (QString error) {
      DEBUG << "mqtt error " << error;
@@ -80,10 +88,9 @@ void InukConnector::printJSON(QJsonObject &json)
     DEBUG << "JSON is : " << json;
 }
 
-void InukConnector::restart()
+void InukConnector::restart(QString msg)
 {
     DEBUG << "restart application";
-    // qApp->exit(EXIT_CODE_REBOOT);
     qApp->quit();
     QProcess::startDetached(qApp->arguments()[0], qApp->arguments());
 }

@@ -38,6 +38,38 @@ void InukMQTT::startConnecting(qint16 timeout)
     this->reconnectTimer->start(timeout);
 }
 
+void InukMQTT::registerGatewayTopic(QString topic, void (*func)(QString))
+{
+    this->registerTopic(GW_TOPIC + "/" + topic, func);
+}
+
+void InukMQTT::registerNodeTopic(QString topic, void (*func)(QString))
+{
+    this->registerTopic(NODES_TOPIC + "/" + topic, func);
+}
+
+void InukMQTT::registerTopic(QString topic, void (*func) (QString))
+{
+    if (!func) {
+        WARN << "no callback function set for topic " << topic;
+        return;
+    }
+    else {
+        client->subscribe(topic);
+        mqttCallbacks.insert(topic, func);
+    }
+}
+
+void InukMQTT::handleRegisteredTopics(QString topic, QString payload)
+{
+    cbFunction _callback = mqttCallbacks.value(topic);
+    if (_callback != nullptr) {
+        _callback (payload);
+    } else {
+        WARN << "no callback for  " << topic << " in map: " << mqttCallbacks;
+    }
+}
+
 void InukMQTT::conectToHost()
 {
     if (!client->isConnectedToHost()) {
@@ -46,15 +78,11 @@ void InukMQTT::conectToHost()
     }
 }
 
-
-
 void InukMQTT::onConnected()
 {
     reconnectTimer->stop();
     DEBUG << "MQTT is now connected to host " << client->hostName();
     emit connected(client->hostName());
-
-    client->subscribe( '/' + MAIN_TOPIC + '/' + GW_NAME + '/' + "action");
 }
 
 void InukMQTT::onError(const QMQTT::ClientError error)
@@ -72,20 +100,7 @@ void InukMQTT::onSubscribed(const QString &topic)
 void InukMQTT::onReceived(const QMQTT::Message &message)
 {
     DEBUG << "received: [" << message.topic() << "]" << QString::fromUtf8(message.payload()) ;
-}
-
-
-
-void InukMQTT::sendMessage()
-{
-//    if (client->isConnectedToHost()) {
-//        QMQTT::Message message(number, EXAMPLE_TOPIC, QString("Number is %1").arg(number).toUtf8());
-//        client->publish(message);
-//        number++;
-//    } else {
-//        client->connectToHost();
-//        DEBUG << "MQTT not connected to host";
-//    }
+    handleRegisteredTopics(message.topic(), QString::fromUtf8(message.payload()));
 }
 
 void InukMQTT::sendString(QString obj)
@@ -96,7 +111,7 @@ void InukMQTT::sendString(QString obj)
 
 void InukMQTT::publish(QString topic, QString msg)
 {
-    QString _topic = '/' + MAIN_TOPIC + '/' + GW_NAME + '/' + topic;
+    QString _topic = GW_TOPIC +'/' + topic;
     DEBUG << "send [" << _topic << "]: " << msg;
     QMQTT::Message message(1, _topic, QString(msg).toUtf8());
     client->publish(message);

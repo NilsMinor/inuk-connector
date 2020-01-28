@@ -27,13 +27,16 @@ private:
     InukSerial *            serial;
     InukMQTT *              mqtt;
 
+    static void cbTest (QString msg);
+
+    static void restart (QString msg);
 signals:
 
 public slots:
     void printMessage (QString &msg);
     void printJSON (QJsonObject &json);
 
-    void restart ();
+
 
     // serial
     void serialStarted( );
