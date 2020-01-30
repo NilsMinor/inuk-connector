@@ -28,7 +28,7 @@ InukConnector::InukConnector(QObject *parent) : QObject(parent)
     connect(cmd, &InukCommandHandler::messsageHandledJson, this, &InukConnector::printJSON);
 
     mqtt->startConnecting();
-    serial->startScanning();
+    //serial->startScanning();
 
     DEBUG << "initialization done";
 }
@@ -68,9 +68,13 @@ void InukConnector::mqttStarted () {
 }
 void InukConnector::mqttConnected (QString hostName) {
      DEBUG << "mqtt connected to " << hostName;
+     serial->startScanning();
 
      mqtt->registerNodeTopic("test", cbTest);
      mqtt->registerGatewayTopic("restart", restart);
+
+//     connect(cmd, SIGNAL(messsageHandledString(QString&)), mqtt, SLOT(publishGateway("/uart-rx",QString&)));
+
 }
 void InukConnector::mqttError (QString error) {
      DEBUG << "mqtt error " << error;
@@ -81,6 +85,7 @@ void InukConnector::mqttDisconnected(QString hostName) {
 
 void InukConnector::printMessage(QString &msg)
 {
+    mqtt->publishGateway("uart-tx", msg);
     DEBUG << "Message is : " << msg;
 }
 void InukConnector::printJSON(QJsonObject &json)

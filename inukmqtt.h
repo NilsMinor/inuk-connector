@@ -33,7 +33,9 @@ const QString GW_SUB_TOPIC          = "/gateway";
 const QString NODE_SUB_TOPIC        = "/nodes";
 
 const QString GW_TOPIC              = MAIN_TOPIC + GW_NAME + GW_SUB_TOPIC ;
-const QString NODES_TOPIC           = MAIN_TOPIC + GW_NAME + NODE_SUB_TOPIC ;
+const QString NODES_TOPIC           = MAIN_TOPIC + GW_NAME + NODE_SUB_TOPIC;
+
+#define SEND_DEBUG_OVER_MQTT
 
 // callback function declaration
 typedef void (*cbFunction)(QString);
@@ -51,6 +53,7 @@ public:
     void registerGatewayTopic (QString topic,void (*func)(QString msg));
     void registerNodeTopic (QString topic,void (*func)(QString msg));
 
+    void sendDebugMsg(QString msg);
 
 
 private :
@@ -71,6 +74,8 @@ signals:
 public slots:
     void sendString(QString obj);
 
+    void publishGateway (QString topic, QString& msg);
+    void publishNode (QString topic, QString &msg);
 private slots:
     void conectToHost();
     void onConnected();

@@ -14,7 +14,8 @@
  *
  */
 
-#define RECONNECTION_INTERVALL 1000
+#define RECONNECTION_INTERVALL  1000
+#define LF_TOKEN                "\r\n"
 
 class InukSerial : public QObject
 {
@@ -28,7 +29,7 @@ private:
     ConnectionSetting *settingsHandler;
     QTimer *reconnectTimer;
     QSerialPort *serial = nullptr;
-
+    QString sBuffer;
 
     void openSerialPort(ConnectionSetting::Settings s);
     void closeSerialPort();

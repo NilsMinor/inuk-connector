@@ -48,6 +48,15 @@ void InukMQTT::registerNodeTopic(QString topic, void (*func)(QString))
     this->registerTopic(NODES_TOPIC + "/" + topic, func);
 }
 
+void InukMQTT::sendDebugMsg(QString msg)
+{
+#if defined (SEND_DEBUG_OVER_MQTT)
+    if (client->isConnectedToHost()) {
+        this->publish(GW_TOPIC + "/debug", msg);
+    }
+#endif
+}
+
 void InukMQTT::registerTopic(QString topic, void (*func) (QString))
 {
     if (!func) {
@@ -107,6 +116,18 @@ void InukMQTT::sendString(QString obj)
 {
     // QMQTT::Message message(1, EXAMPLE_TOPIC, QString(obj).toUtf8());
     // client->publish(message);
+}
+
+void InukMQTT::publishGateway(QString topic, QString &msg)
+{
+    QMQTT::Message message(0, GW_TOPIC +'/' + topic, QString(msg).toUtf8());
+    client->publish(message);
+}
+
+void InukMQTT::publishNode(QString topic, QString& msg)
+{
+    QMQTT::Message message(0, NODES_TOPIC +'/' + topic, QString(msg).toUtf8());
+    client->publish(message);
 }
 
 void InukMQTT::publish(QString topic, QString msg)

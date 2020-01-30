@@ -17,13 +17,13 @@ int main(int argc, char *argv[])
      QCoreApplication a(argc, argv);
     do {
 
-        qSetMessagePattern(DEBUG_PATTERN); // DEBUG_PATTERN | PROD_PATTERN
+        qSetMessagePattern(PROD_PATTERN); // DEBUG_PATTERN | PROD_PATTERN
 
-        QLoggingCategory::setFilterRules(QStringLiteral("inuk.*.debug=true\n"
-                                                    "inuk.serial*.debug=false\n"
-                                                    "inuk.mqtt.debug=true\n"
-                                                    "inuk.cmd.debug=true\n"
-                                                    "inuk.con.debug=true\n"
+        QLoggingCategory::setFilterRules(QStringLiteral("inuk.*.debug=false\n"
+                                                    "inuk.serial*.debug=true\n"
+                                                    "inuk.mqtt.debug=false\n"
+                                                    "inuk.cmd.debug=false\n"
+                                                    "inuk.con.debug=false\n"
                                                     ));
 
         InukConnector * inuk_conector = new InukConnector();

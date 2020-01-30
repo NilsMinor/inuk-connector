@@ -17,7 +17,6 @@ InukSerial::InukSerial(QObject *parent) : QObject(parent)
     connect(serial, &QSerialPort::readyRead, this, &InukSerial::readData);
     // connect(this, &InukCommandHandler::sendMessage, this, &InukConnector::writeData);
 
-    startScanning(RECONNECTION_INTERVALL);
 }
 
 InukSerial::~InukSerial()
@@ -93,11 +92,32 @@ void InukSerial::writeData(const QByteArray &data)
 void InukSerial::readData()
 {
     if (serial->isOpen()) {
+
+        // the serial port readAll function will receive data with variable length
         const QByteArray data = serial->readAll();
-        DEBUG << "received via serial port " << data;
         QString msg = QString(data);
-        msg.replace("\r\n", "");    // remove line-feed
-        emit receivedData(msg);
+
+        // add message to buffer
+        sBuffer.append(msg);
+
+        // split the buffer by line feed
+        // split the buffer by line feed token
+        // fStr contains the message
+        // sStr contains the remaining data of the message buffer
+        if (sBuffer.contains(LF_TOKEN)) {
+            QStringList list = sBuffer.split(LF_TOKEN);
+
+            if (list.length() == 2) {
+                QString fStr = list[0];
+                QString sStr = list[1];
+
+                // set remaining data to buffer content
+                sBuffer = sStr;
+
+                DEBUG << "serial received " << fStr;
+                emit receivedData(fStr);
+            }
+        }
     }
     else {
         WARN << "serial connection is not open";
