@@ -33,6 +33,12 @@ void InukSerial::startScanning(qint16 timeout)
     this->reconnectTimer->start(timeout);
 }
 
+void InukSerial::sendMessage(QString msg)
+{
+    const QByteArray data = msg.toUtf8();
+    this->writeData(data);
+}
+
 void InukSerial::scannConnection()
 {
     if (settingsHandler) {

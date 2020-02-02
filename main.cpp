@@ -19,14 +19,15 @@ int main(int argc, char *argv[])
 
         qSetMessagePattern(PROD_PATTERN); // DEBUG_PATTERN | PROD_PATTERN
 
-        QLoggingCategory::setFilterRules(QStringLiteral("inuk.*.debug=false\n"
-                                                    "inuk.serial*.debug=true\n"
-                                                    "inuk.mqtt.debug=false\n"
-                                                    "inuk.cmd.debug=false\n"
-                                                    "inuk.con.debug=false\n"
+        QLoggingCategory::setFilterRules(QStringLiteral("inuk.*.debug=true\n"
+                                                    "inuk.serial*.debug=false\n"
+                                                    "inuk.mqtt.debug=true\n"
+                                                    "inuk.cmd.debug=true\n"
+                                                    "inuk.con.debug=true\n"
                                                     ));
 
         InukConnector * inuk_conector = new InukConnector();
+        Q_UNUSED(inuk_conector);
         currentExitCode = a.exec();
      } while( currentExitCode == InukConnector::EXIT_CODE_REBOOT );
 

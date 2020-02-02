@@ -5,7 +5,7 @@
 #define DEBUG       qDebug(LOGGING_CAT)
 #define WARN        qWarning(LOGGING_CAT)
 
-InukMQTT::InukMQTT(QObject *parent) : QObject(parent)
+InukMQTT::InukMQTT(QObject *parent) : _parent(parent)
 {
     client = new QMQTT::Client;
     client->setHostName(HOST_NAME);
@@ -19,8 +19,6 @@ InukMQTT::InukMQTT(QObject *parent) : QObject(parent)
 
     reconnectTimer = new QTimer(this);
     connect(reconnectTimer, &QTimer::timeout, this, &InukMQTT::conectToHost);
-
-    startConnecting ();
 
 }
 
@@ -38,14 +36,14 @@ void InukMQTT::startConnecting(qint16 timeout)
     this->reconnectTimer->start(timeout);
 }
 
-void InukMQTT::registerGatewayTopic(QString topic, void (*func)(QString))
+void InukMQTT::registerGatewayTopic(QString topic, CallbackDataT *callback)
 {
-    this->registerTopic(GW_TOPIC + "/" + topic, func);
+    this->registerTopic(GW_TOPIC + topic, callback);
 }
 
-void InukMQTT::registerNodeTopic(QString topic, void (*func)(QString))
+void InukMQTT::registerNodeTopic(QString topic, CallbackDataT *callback)
 {
-    this->registerTopic(NODES_TOPIC + "/" + topic, func);
+    this->registerTopic(NODES_TOPIC + topic, callback);
 }
 
 void InukMQTT::sendDebugMsg(QString msg)
@@ -57,23 +55,28 @@ void InukMQTT::sendDebugMsg(QString msg)
 #endif
 }
 
-void InukMQTT::registerTopic(QString topic, void (*func) (QString))
+void InukMQTT::registerTopic(QString topic,  CallbackDataT *callback)
 {
-    if (!func) {
+    if (!callback) {
         WARN << "no callback function set for topic " << topic;
         return;
     }
     else {
         client->subscribe(topic);
-        mqttCallbacks.insert(topic, func);
+        mqttCallbacks.insert(topic, callback);
     }
 }
 
 void InukMQTT::handleRegisteredTopics(QString topic, QString payload)
 {
-    cbFunction _callback = mqttCallbacks.value(topic);
+    CallbackDataT * _callback = mqttCallbacks.value(topic);
+    if (_parent == nullptr) {
+        WARN << "no parent was set";
+        return;
+    }
     if (_callback != nullptr) {
-        _callback (payload);
+        DEBUG << "call registers callback for [" << topic << "] with payload " << payload;
+        _callback (_parent, payload);
     } else {
         WARN << "no callback for  " << topic << " in map: " << mqttCallbacks;
     }
@@ -112,27 +115,21 @@ void InukMQTT::onReceived(const QMQTT::Message &message)
     handleRegisteredTopics(message.topic(), QString::fromUtf8(message.payload()));
 }
 
-void InukMQTT::sendString(QString obj)
-{
-    // QMQTT::Message message(1, EXAMPLE_TOPIC, QString(obj).toUtf8());
-    // client->publish(message);
-}
-
 void InukMQTT::publishGateway(QString topic, QString &msg)
 {
-    QMQTT::Message message(0, GW_TOPIC +'/' + topic, QString(msg).toUtf8());
+    QMQTT::Message message(0, GW_TOPIC + topic, QString(msg).toUtf8());
     client->publish(message);
 }
 
 void InukMQTT::publishNode(QString topic, QString& msg)
 {
-    QMQTT::Message message(0, NODES_TOPIC +'/' + topic, QString(msg).toUtf8());
+    QMQTT::Message message(0, NODES_TOPIC + topic, QString(msg).toUtf8());
     client->publish(message);
 }
 
 void InukMQTT::publish(QString topic, QString msg)
 {
-    QString _topic = GW_TOPIC +'/' + topic;
+    QString _topic = GW_TOPIC + topic;
     DEBUG << "send [" << _topic << "]: " << msg;
     QMQTT::Message message(1, _topic, QString(msg).toUtf8());
     client->publish(message);

@@ -6,7 +6,9 @@ converted to json object to send the via an mqtt-client.
 
 This application is based on qmqtt.
 
-
+## TODO
+- add config file to load serial connection settings
+- add config file to load mqtt connection settings
 
 ## topics
 

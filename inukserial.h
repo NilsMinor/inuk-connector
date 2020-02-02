@@ -25,6 +25,18 @@ public:
         ~InukSerial();
     void startScanning (qint16 timeout = RECONNECTION_INTERVALL);
 
+
+signals:
+
+    void started();
+    void connected (QString portName);
+    void disconnected (QString portName);
+    void receivedData (QString & msg);
+
+public slots:
+    void sendMessage (QString msg);
+
+
 private:
     ConnectionSetting *settingsHandler;
     QTimer *reconnectTimer;
@@ -40,14 +52,8 @@ private slots :
     void scannConnection ();
     void writeData(const QByteArray &data);
 
-signals:
 
-    void started();
-    void connected (QString portName);
-    void disconnected (QString portName);
-    void receivedData (QString & msg);
 
-public slots:
 };
 
 #endif // INUKSERIAL_H

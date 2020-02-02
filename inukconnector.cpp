@@ -5,6 +5,29 @@
 #define DEBUG       qDebug(LOGGING_CAT)
 #define WARN        qWarning(LOGGING_CAT)
 
+//
+// DEFINE FRIEND CALLBACKS
+//
+
+void cb_restartApplication(QObject *Sender, QString &msg)
+{
+    Q_UNUSED(Sender);
+    DEBUG << "restart application with message " << msg;
+    qApp->quit();
+    QProcess::startDetached(qApp->arguments()[0], qApp->arguments());
+}
+
+void cb_sendUartMessage(QObject *Sender, QString &msg)
+{
+    DEBUG << "send message via uart " << msg;
+    InukConnector * con = reinterpret_cast<InukConnector*>(Sender);
+    con->serial->sendMessage(msg);
+}
+
+//
+// END OF FRIEND CALLBACKS
+//
+
 InukConnector::InukConnector(QObject *parent) : QObject(parent)
 {
     // init serial connector
@@ -14,12 +37,14 @@ InukConnector::InukConnector(QObject *parent) : QObject(parent)
     connect(serial, &InukSerial::connected, this, &InukConnector::serialConnected);
     connect(serial, &InukSerial::disconnected, this, &InukConnector::serialDisconnected);
 
+
     // init mqtt connector
-    mqtt = new InukMQTT();
+    mqtt = new InukMQTT(this);
     connect(mqtt, &InukMQTT::started, this, &InukConnector::mqttStarted);
     connect(mqtt, &InukMQTT::connected, this, &InukConnector::mqttConnected);
     connect(mqtt, &InukMQTT::disconnected, this, &InukConnector::mqttDisconnected);
     connect(mqtt, &InukMQTT::errorOccured, this, &InukConnector::mqttError);
+
 
     cmd = new InukCommandHandler();
 
@@ -27,10 +52,13 @@ InukConnector::InukConnector(QObject *parent) : QObject(parent)
     connect(cmd, &InukCommandHandler::messsageHandledString, this, &InukConnector::printMessage);
     connect(cmd, &InukCommandHandler::messsageHandledJson, this, &InukConnector::printJSON);
 
+    connect(this,   &InukConnector::sendViaSerial, serial, &InukSerial::sendMessage);
+
     mqtt->startConnecting();
-    //serial->startScanning();
 
     DEBUG << "initialization done";
+
+
 }
 
 InukConnector::~InukConnector()
@@ -38,25 +66,21 @@ InukConnector::~InukConnector()
 
 }
 
-void InukConnector::cbTest(QString msg)
-{
-    DEBUG << "Callback : " << msg;
-}
-
 //
 // SERIAL
 //
 void InukConnector::serialStarted( ) {
     DEBUG << "serial started scanning";
-    mqtt->publish("status", "serial-scanning");
+    mqtt->publish(ST_STATUS, "serial-scanning");
 }
 void InukConnector::serialConnected(QString portName) {
     DEBUG << "serial connected to " << portName;
-    mqtt->publish("status", "serial-connected");
+    mqtt->publish(ST_STATUS, "serial-connected");
+
 }
 void InukConnector::serialDisconnected(QString portName) {
     DEBUG << "serial disconnected from " << portName;
-    mqtt->publish("status", "serial-disconnected");
+    mqtt->publish(ST_STATUS, "serial-disconnected");
 }
 
 //
@@ -70,8 +94,10 @@ void InukConnector::mqttConnected (QString hostName) {
      DEBUG << "mqtt connected to " << hostName;
      serial->startScanning();
 
-     mqtt->registerNodeTopic("test", cbTest);
-     mqtt->registerGatewayTopic("restart", restart);
+     mqtt->registerGatewayTopic(AT_RESTART, cb_restartApplication);
+     //mqtt->registerGatewayTopic(AT_UART_TX, cb_sendUartMessage);
+
+     mqtt->registerGatewayTopic(AT_UART_TX, cb_sendUartMessage);
 
 //     connect(cmd, SIGNAL(messsageHandledString(QString&)), mqtt, SLOT(publishGateway("/uart-rx",QString&)));
 
@@ -85,7 +111,7 @@ void InukConnector::mqttDisconnected(QString hostName) {
 
 void InukConnector::printMessage(QString &msg)
 {
-    mqtt->publishGateway("uart-tx", msg);
+    mqtt->publishGateway(AT_UART_RX, msg);
     DEBUG << "Message is : " << msg;
 }
 void InukConnector::printJSON(QJsonObject &json)
@@ -93,11 +119,10 @@ void InukConnector::printJSON(QJsonObject &json)
     DEBUG << "JSON is : " << json;
 }
 
-void InukConnector::restart(QString msg)
-{
-    DEBUG << "restart application";
-    qApp->quit();
-    QProcess::startDetached(qApp->arguments()[0], qApp->arguments());
-}
+
+
+
+
+
 
 
