@@ -32,7 +32,6 @@ InukConnector::InukConnector(QObject *parent) : QObject(parent)
 {
     // init serial connector
     serial = new InukSerial();
-
     connect(serial, &InukSerial::started, this, &InukConnector::serialStarted);
     connect(serial, &InukSerial::connected, this, &InukConnector::serialConnected);
     connect(serial, &InukSerial::disconnected, this, &InukConnector::serialDisconnected);
@@ -57,8 +56,6 @@ InukConnector::InukConnector(QObject *parent) : QObject(parent)
     mqtt->startConnecting();
 
     DEBUG << "initialization done";
-
-
 }
 
 InukConnector::~InukConnector()
@@ -109,6 +106,10 @@ void InukConnector::mqttDisconnected(QString hostName) {
     DEBUG << "mqtt disconnected from " << hostName;
 }
 
+
+//
+// CMD HANDLER
+//
 void InukConnector::printMessage(QString &msg)
 {
     mqtt->publishGateway(AT_UART_RX, msg);
@@ -116,6 +117,7 @@ void InukConnector::printMessage(QString &msg)
 }
 void InukConnector::printJSON(QJsonObject &json)
 {
+//    mqtt->publishGateway(AT_UART_RX, json);
     DEBUG << "JSON is : " << json;
 }
 

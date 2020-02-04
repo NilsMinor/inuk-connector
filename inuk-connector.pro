@@ -23,6 +23,8 @@ SOURCES += \
         inukmqtt.cpp \
         inukserial.cpp \
         main.cpp \
+        messages/connectionmessage.cpp \
+        messages/message.cpp \
         qtjsonhandler.cpp
 
 # Default rules for deployment.
@@ -36,6 +38,8 @@ HEADERS += \
     inukconnector.h \
     inukmqtt.h \
     inukserial.h \
+    messages/connectionmessage.h \
+    messages/message.h \
     qtjsonhandler.h
 
 DISTFILES += \

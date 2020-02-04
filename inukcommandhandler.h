@@ -8,6 +8,8 @@
 #include <QTimer>
 #include "inukmqtt.h"
 
+#include "messages/connectionmessage.h"
+
 
 #define GATEWAY_ID      "this"
 #define ALL_ID          "0"

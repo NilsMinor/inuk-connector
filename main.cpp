@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
 
         QLoggingCategory::setFilterRules(QStringLiteral("inuk.*.debug=true\n"
                                                     "inuk.serial*.debug=false\n"
-                                                    "inuk.mqtt.debug=true\n"
+                                                    "inuk.mqtt.debug=false\n"
                                                     "inuk.cmd.debug=true\n"
                                                     "inuk.con.debug=true\n"
                                                     ));

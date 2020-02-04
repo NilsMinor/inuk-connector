@@ -11,8 +11,7 @@ InukCommandHandler::InukCommandHandler(QObject *parent) : QObject(parent)
 {
     periodicTimer = new QTimer(this);
     connect(periodicTimer, &QTimer::timeout, this, &InukCommandHandler::periodicCallback);
-    periodicTimer->start(1000);
-
+   // periodicTimer->start(1000);
 
 }
 
@@ -28,6 +27,18 @@ void InukCommandHandler::handleRawMessage(QString &msg)
     QJsonObject obj = j.stringToObject(msg);
 
     if (!obj.isEmpty()) {
+
+        DEBUG << obj;
+        if (obj["type"].toString() == "device_info") {
+             ConnectionMessage msg;
+             msg.read(obj);
+
+             DEBUG << msg.print();
+
+        } else {
+            DEBUG << "type not supported";
+        }
+
         emit messsageHandledJson(obj);
 
     }else {
@@ -37,7 +48,7 @@ void InukCommandHandler::handleRawMessage(QString &msg)
 
 void InukCommandHandler::periodicCallback()
 {
-    emit sendMessage("get_config this adv");
+    emit sendMessage("action this status get_device_info");
 }
 
 
