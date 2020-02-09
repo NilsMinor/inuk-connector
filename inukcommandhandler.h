@@ -8,28 +8,40 @@
 #include <QTimer>
 #include "inukmqtt.h"
 
-#include "messages/connectionmessage.h"
+#include "messages/fruitymessages.h"
 
 
 #define GATEWAY_ID      "this"
 #define ALL_ID          "0"
+#define STATUS          "status"
+#define ACTION          "action"
+#define DEVICE_INFO     "get_device_info"
 
 class InukCommandHandler : public QObject
 {
     Q_OBJECT
 public:
     explicit InukCommandHandler(QObject *parent = nullptr);
+    QString createMessage(QStringList list);
 
 private :
-    QString parseRawMessage (QString msg);
     QTimer * periodicTimer;
+    void parseRawMessage (QString &msg);
+    void parseRawMessage (QJsonObject & obj);
+
 
 signals:
-    void sendMessage(const QByteArray &data);
+    void sendMessageToSerial(QString msg);
+
     void messsageHandledString(QString &msg);
     void messsageHandledJson(QJsonObject &json);
+    void registerGateWayToipc (QString topic, QString msg);
+    void nodeConnected (QString nodeId, bool isGateWay=false);
+    void nodeDisconnected (QString nodeId, bool isGateWay=false);
+
 
 public slots:
+    void connected ();
     void handleRawMessage (QString &msg);
     void periodicCallback();
 };

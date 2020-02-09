@@ -24,6 +24,8 @@ SOURCES += \
         inukserial.cpp \
         main.cpp \
         messages/connectionmessage.cpp \
+        messages/logmessage.cpp \
+        messages/meshconnectmessage.cpp \
         messages/message.cpp \
         qtjsonhandler.cpp
 
@@ -39,6 +41,9 @@ HEADERS += \
     inukmqtt.h \
     inukserial.h \
     messages/connectionmessage.h \
+    messages/fruitymessages.h \
+    messages/logmessage.h \
+    messages/meshconnectmessage.h \
     messages/message.h \
     qtjsonhandler.h
 

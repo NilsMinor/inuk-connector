@@ -56,13 +56,13 @@ const QString AT_MESH_CMD                   = "/mesh-cmd";
 
 const QString ST_STATUS                     = "/status";
 // MAIN TOPICS
-const QString GW_TOPIC                      = MAIN_TOPIC + GW_NAME + GW_SUB_TOPIC ;
-const QString NODES_TOPIC                   = MAIN_TOPIC + GW_NAME + NODE_SUB_TOPIC;
+const QString GW_TOPIC                      = MAIN_TOPIC + GW_SUB_TOPIC;
+const QString NODES_TOPIC                   = MAIN_TOPIC + NODE_SUB_TOPIC;
 
 #define SEND_DEBUG_OVER_MQTT
 
 // callback function declaration
-typedef void CallbackDataT(QObject*,QString&);
+typedef void CallbackDataT(QObject*, QString&, QString&);
 
 class InukMQTT : public QObject
 {
@@ -72,10 +72,11 @@ public:
     ~InukMQTT();
 
     void publish(QString topic, QString msg);
-    void startConnecting(qint16 timeout = 10000);
+    void startConnecting(qint16 timeout = 5000);
 
     void registerGatewayTopic (QString topic, CallbackDataT *callback);
     void registerNodeTopic (QString topic, CallbackDataT *callback);
+    void unregisterNodeTopic(QString topic);
 
     void sendDebugMsg(QString msg);
     QObject * _parent;

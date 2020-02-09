@@ -19,7 +19,10 @@ After a connection is established to an mqtt server, the connector will create a
 GW_ID ist the ID of the Gateway for example 1234
 
 inuit/$gatewayID
+                /
                 /status
+                /uart-tx
+                /uart-rx
                 /nodes
                        /unenrolled/$nodeID
                        /enrolled/$nodeID

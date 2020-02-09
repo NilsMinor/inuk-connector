@@ -17,12 +17,25 @@ void cb_restartApplication(QObject *Sender, QString &msg)
     QProcess::startDetached(qApp->arguments()[0], qApp->arguments());
 }
 
-void cb_sendUartMessage(QObject *Sender, QString &msg)
+void cb_sendUartMessage(QObject *Sender, QString &topic, QString &msg)
+{
+    Q_UNUSED(topic);
+    DEBUG << "send message via uart " << msg;
+    InukConnector * con = reinterpret_cast<InukConnector*>(Sender);
+
+    con->serial->sendMessage(msg);
+}
+
+void cb_sendUartCommand(QObject *Sender, QString &topic, QString &msg)
 {
     DEBUG << "send message via uart " << msg;
     InukConnector * con = reinterpret_cast<InukConnector*>(Sender);
-    con->serial->sendMessage(msg);
+
+    QString cmd = con->cmd->createMessage({ACTION, con->getNodeId(topic), STATUS, msg});
+    DEBUG << "send command " << cmd;
+    con->serial->sendMessage(cmd);
 }
+
 
 //
 // END OF FRIEND CALLBACKS
@@ -32,26 +45,28 @@ InukConnector::InukConnector(QObject *parent) : QObject(parent)
 {
     // init serial connector
     serial = new InukSerial();
-    connect(serial, &InukSerial::started, this, &InukConnector::serialStarted);
-    connect(serial, &InukSerial::connected, this, &InukConnector::serialConnected);
-    connect(serial, &InukSerial::disconnected, this, &InukConnector::serialDisconnected);
-
+    connect(serial, &InukSerial::started, this, &InukConnector::serialStarted);                     // serial port client started, trying to connect
+    connect(serial, &InukSerial::connected, this, &InukConnector::serialConnected);                 // serial port client connected
+    connect(serial, &InukSerial::disconnected, this, &InukConnector::serialDisconnected);           // serial port client disconnected
 
     // init mqtt connector
     mqtt = new InukMQTT(this);
-    connect(mqtt, &InukMQTT::started, this, &InukConnector::mqttStarted);
-    connect(mqtt, &InukMQTT::connected, this, &InukConnector::mqttConnected);
-    connect(mqtt, &InukMQTT::disconnected, this, &InukConnector::mqttDisconnected);
-    connect(mqtt, &InukMQTT::errorOccured, this, &InukConnector::mqttError);
+    connect(mqtt, &InukMQTT::started, this, &InukConnector::mqttStarted);                           // mqtt client started, trying to connect to host
+    connect(mqtt, &InukMQTT::connected, this, &InukConnector::mqttConnected);                       // mqtt client connected to hsot
+    connect(mqtt, &InukMQTT::disconnected, this, &InukConnector::mqttDisconnected);                 // mqtt client disconnected from host
+    connect(mqtt, &InukMQTT::errorOccured, this, &InukConnector::mqttError);                        // mqtt client error occured
 
-
+    // command manager
     cmd = new InukCommandHandler();
+    connect(serial, &InukSerial::connected, cmd, &InukCommandHandler::connected);                   // inform cmd handler that serial conection is established
+    connect(serial, &InukSerial::receivedData, cmd, &InukCommandHandler::handleRawMessage);         // inform cmd handler that serial message was received
+    connect(cmd, &InukCommandHandler::messsageHandledString, this, &InukConnector::printMessage);   // cmd handler has parsed a string message
+    connect(cmd, &InukCommandHandler::messsageHandledJson, this, &InukConnector::printJSON);        // cmd handler has parsed a json message
+    connect(cmd, &InukCommandHandler::sendMessageToSerial, serial, &InukSerial::sendMessage);       // cmd handler send message over serial port
 
-    connect(serial, &InukSerial::receivedData, cmd, &InukCommandHandler::handleRawMessage);
-    connect(cmd, &InukCommandHandler::messsageHandledString, this, &InukConnector::printMessage);
-    connect(cmd, &InukCommandHandler::messsageHandledJson, this, &InukConnector::printJSON);
+    connect(cmd, &InukCommandHandler::nodeConnected, this, &InukConnector::connectNode);            // cmd handler recognized a node connection
+    connect(cmd, &InukCommandHandler::nodeDisconnected, this, &InukConnector::disconnectNode);      // cmd handler recoginzed a node disconnection
 
-    connect(this,   &InukConnector::sendViaSerial, serial, &InukSerial::sendMessage);
 
     mqtt->startConnecting();
 
@@ -61,6 +76,13 @@ InukConnector::InukConnector(QObject *parent) : QObject(parent)
 InukConnector::~InukConnector()
 {
 
+}
+
+QString InukConnector::getNodeId(QString topic)
+{
+    // topic is build like >inuit/nodes/2935<
+    QStringList pieces = topic.split( "/" );
+    return pieces.value( pieces.length() - 1 );
 }
 
 //
@@ -91,13 +113,8 @@ void InukConnector::mqttConnected (QString hostName) {
      DEBUG << "mqtt connected to " << hostName;
      serial->startScanning();
 
-     mqtt->registerGatewayTopic(AT_RESTART, cb_restartApplication);
-     //mqtt->registerGatewayTopic(AT_UART_TX, cb_sendUartMessage);
-
-     mqtt->registerGatewayTopic(AT_UART_TX, cb_sendUartMessage);
-
-//     connect(cmd, SIGNAL(messsageHandledString(QString&)), mqtt, SLOT(publishGateway("/uart-rx",QString&)));
-
+     // mqtt->registerGatewayTopic(AT_RESTART, cb_restartApplication);
+     // mqtt->registerGatewayTopic(AT_UART_TX, cb_sendUartMessage);
 }
 void InukConnector::mqttError (QString error) {
      DEBUG << "mqtt error " << error;
@@ -106,6 +123,28 @@ void InukConnector::mqttDisconnected(QString hostName) {
     DEBUG << "mqtt disconnected from " << hostName;
 }
 
+void InukConnector::connectNode(QString nodeId, bool isGateWay)
+{
+    // register gateway nodeId topic
+    if (isGateWay) {
+        DEBUG << "register node as gateway " << nodeId;
+        mqtt->registerGatewayTopic(nodeId, cb_sendUartCommand);
+    }
+    else {
+        DEBUG << "register node " << nodeId;
+        mqtt->registerNodeTopic(nodeId, cb_sendUartCommand);
+    }
+}
+
+void InukConnector::disconnectNode(QString nodeId, bool isGateWay)
+{
+    if (isGateWay) {
+        mqtt->unregisterNodeTopic(nodeId);
+    }
+    else {
+         mqtt->unregisterNodeTopic(nodeId);
+    }
+}
 
 //
 // CMD HANDLER
@@ -117,8 +156,12 @@ void InukConnector::printMessage(QString &msg)
 }
 void InukConnector::printJSON(QJsonObject &json)
 {
-//    mqtt->publishGateway(AT_UART_RX, json);
-    DEBUG << "JSON is : " << json;
+    QJsonDocument doc(json);
+    QString strJson(doc.toJson(QJsonDocument::Compact));
+    mqtt->publishGateway(AT_UART_RX, strJson);
+
+    // TODO add nodelist in order ro filter recevied messages by nodeIds
+    // DEBUG << "JSON is : " << json;
 }
 
 

@@ -11,7 +11,6 @@ InukMQTT::InukMQTT(QObject *parent) : _parent(parent)
     client->setHostName(HOST_NAME);
     client->setPort(1883);
 
-
     connect(client, SIGNAL(connected()), this, SLOT(onConnected()));
     connect(client, SIGNAL(subscribed(QString)), this, SLOT(onSubscribed(QString)));
     connect(client, SIGNAL(received(QMQTT::Message)), this, SLOT(onReceived(QMQTT::Message)));
@@ -19,7 +18,6 @@ InukMQTT::InukMQTT(QObject *parent) : _parent(parent)
 
     reconnectTimer = new QTimer(this);
     connect(reconnectTimer, &QTimer::timeout, this, &InukMQTT::conectToHost);
-
 }
 
 InukMQTT::~InukMQTT()
@@ -38,12 +36,25 @@ void InukMQTT::startConnecting(qint16 timeout)
 
 void InukMQTT::registerGatewayTopic(QString topic, CallbackDataT *callback)
 {
-    this->registerTopic(GW_TOPIC + topic, callback);
+    QString m ="subscribed";
+    QString top = "/" + topic;
+    this->publishGateway(top, m);
+    this->registerTopic(GW_TOPIC + top, callback);
 }
 
 void InukMQTT::registerNodeTopic(QString topic, CallbackDataT *callback)
 {
-    this->registerTopic(NODES_TOPIC + topic, callback);
+    QString m ="subscribed";
+    QString top = "/" + topic;
+    this->publishNode(top, m);
+    this->registerTopic(NODES_TOPIC + top, callback);
+}
+
+void InukMQTT::unregisterNodeTopic(QString topic)
+{
+    QString m ="unsubscribed";
+    this->publishNode("/"+topic, m);
+    client->unsubscribe(topic);
 }
 
 void InukMQTT::sendDebugMsg(QString msg)
@@ -76,7 +87,7 @@ void InukMQTT::handleRegisteredTopics(QString topic, QString payload)
     }
     if (_callback != nullptr) {
         DEBUG << "call registers callback for [" << topic << "] with payload " << payload;
-        _callback (_parent, payload);
+        _callback (_parent, topic, payload);
     } else {
         WARN << "no callback for  " << topic << " in map: " << mqttCallbacks;
     }

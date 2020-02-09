@@ -27,11 +27,13 @@ private:
     InukSerial *            serial;
     InukMQTT *              mqtt;
 
-    friend void cb_restartApplication (QObject * Sender, QString &msg);
-    friend void cb_sendUartMessage (QObject * Sender, QString &msg);
+    friend void cb_restartApplication (QObject * Sender, QString &topic, QString &msg);
+    friend void cb_sendUartMessage (QObject * Sender, QString &topic, QString &msg);
+    friend void cb_sendUartCommand (QObject * Sender, QString &topic, QString &msg);
+
+    QString getNodeId (QString topic);
 
 signals:
-    void sendViaSerial (QString msg);
 
 public slots:
     void printMessage (QString &msg);
@@ -47,6 +49,10 @@ public slots:
     void mqttConnected (QString hostName);
     void mqttError (QString error);
     void mqttDisconnected(QString hostanem);
+
+    // cmd
+    void connectNode(QString nodeId, bool isGateWay);
+    void disconnectNode(QString nodeId, bool isGateWay);
 };
 
 #endif // INUKCONNECTOR_H
