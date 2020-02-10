@@ -33,6 +33,8 @@ private:
 
     QString getNodeId (QString topic);
 
+    QStringList connectedNodes;
+
 signals:
 
 public slots:

@@ -131,8 +131,9 @@ void InukConnector::connectNode(QString nodeId, bool isGateWay)
         mqtt->registerGatewayTopic(nodeId, cb_sendUartCommand);
     }
     else {
-        DEBUG << "register node " << nodeId;
+        connectedNodes += nodeId;
         mqtt->registerNodeTopic(nodeId, cb_sendUartCommand);
+        DEBUG << "register node " << nodeId << " connectedNodes is" << connectedNodes;
     }
 }
 
@@ -142,7 +143,9 @@ void InukConnector::disconnectNode(QString nodeId, bool isGateWay)
         mqtt->unregisterNodeTopic(nodeId);
     }
     else {
-         mqtt->unregisterNodeTopic(nodeId);
+        connectedNodes.removeOne(nodeId);
+        mqtt->unregisterNodeTopic(nodeId);
+        DEBUG << "unregsiter node " << nodeId << " connectedNodes is " << connectedNodes;
     }
 }
 
@@ -157,10 +160,20 @@ void InukConnector::printMessage(QString &msg)
 void InukConnector::printJSON(QJsonObject &json)
 {
     QJsonDocument doc(json);
-    QString strJson(doc.toJson(QJsonDocument::Compact));
-    mqtt->publishGateway(AT_UART_RX, strJson);
+    QString msg(doc.toJson(QJsonDocument::Compact));
 
-    // TODO add nodelist in order ro filter recevied messages by nodeIds
+    // check if the message contains a nodeId
+    QString nodeId = QString::number(GET_NODE_ID(json));
+
+    if (!nodeId.isEmpty()) {
+        if (connectedNodes.contains(nodeId)) {
+            mqtt->publishNode( '/' + nodeId + AT_UART_RX, msg);
+        }
+    }
+    else {
+        mqtt->publishGateway(AT_UART_RX, msg);
+    }
+
     // DEBUG << "JSON is : " << json;
 }
 

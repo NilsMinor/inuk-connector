@@ -14,7 +14,8 @@
 #define MSG_MESH_ERROR              ("error")
 #define MSG_CLUSTER_DISCONNECT      ("cluster_disconnect")
 
-#define MSG_TYPE_IS(json,e)         (obj["type"].toString() == QString(e))
-#define MSG_TYPE(json)              (obj["type"].toString())
+#define MSG_TYPE_IS(json,e)         (json["type"].toString() == QString(e))
+#define MSG_TYPE(json)              (json["type"].toString())
+#define GET_NODE_ID(json)           (json["nodeId"].toInt())
 
 #endif // FRUITYMESSAGES_H
