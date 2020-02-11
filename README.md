@@ -24,8 +24,15 @@ inuit/$gatewayID
                 /uart-tx
                 /uart-rx
                 /nodes
-                       /unenrolled/$nodeID
-                       /enrolled/$nodeID
+                    $nodeID
+                        /status
+                        /uart-tx
+                        /uart-rx
+                        /pir
+                        /light
+                        /solar
+                        /battery
+                        /config
 
 
 

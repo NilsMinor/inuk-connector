@@ -26,7 +26,7 @@ void cb_sendUartMessage(QObject *Sender, QString &topic, QString &msg)
     con->serial->sendMessage(msg);
 }
 
-void cb_sendUartCommand(QObject *Sender, QString &topic, QString &msg)
+void cb_sendMessageToNode(QObject *Sender, QString &topic, QString &msg)
 {
     DEBUG << "send message via uart " << msg;
     InukConnector * con = reinterpret_cast<InukConnector*>(Sender);
@@ -82,7 +82,8 @@ QString InukConnector::getNodeId(QString topic)
 {
     // topic is build like >inuit/nodes/2935<
     QStringList pieces = topic.split( "/" );
-    return pieces.value( pieces.length() - 1 );
+    DEBUG << pieces;
+    return pieces.value( pieces.length() - 2 );
 }
 
 //
@@ -90,16 +91,16 @@ QString InukConnector::getNodeId(QString topic)
 //
 void InukConnector::serialStarted( ) {
     DEBUG << "serial started scanning";
-    mqtt->publish(ST_STATUS, "serial-scanning");
+    mqtt->publish(T_STATUS, "serial-scanning");
 }
 void InukConnector::serialConnected(QString portName) {
     DEBUG << "serial connected to " << portName;
-    mqtt->publish(ST_STATUS, "serial-connected");
+    mqtt->publish(T_STATUS, "serial-connected");
 
 }
 void InukConnector::serialDisconnected(QString portName) {
     DEBUG << "serial disconnected from " << portName;
-    mqtt->publish(ST_STATUS, "serial-disconnected");
+    mqtt->publish(T_STATUS, "serial-disconnected");
 }
 
 //
@@ -128,11 +129,20 @@ void InukConnector::connectNode(QString nodeId, bool isGateWay)
     // register gateway nodeId topic
     if (isGateWay) {
         DEBUG << "register node as gateway " << nodeId;
-        mqtt->registerGatewayTopic(nodeId, cb_sendUartCommand);
+        mqtt->registerGatewayTopic(nodeId, cb_sendMessageToNode);
     }
     else {
-        connectedNodes += nodeId;
-        mqtt->registerNodeTopic(nodeId, cb_sendUartCommand);
+        connectedNodes += nodeId;   // save nodeId in node-list
+        mqtt->publishNode(nodeId + T_STATUS, M_CONNECTED);
+        mqtt->publishNode(nodeId + T_UART_RX, M_UART_RDY);
+        mqtt->registerNodeTopic(nodeId + T_UART_TX, cb_sendMessageToNode, M_UART_RDY);
+        mqtt->registerNodeTopic(nodeId + T_PIR, nullptr, M_OFF);
+        mqtt->registerNodeTopic(nodeId + T_LIGHT, nullptr, M_OFF);
+        mqtt->registerNodeTopic(nodeId + T_SOLAR, nullptr, M_OFF);
+        mqtt->registerNodeTopic(nodeId + T_CONFIG, nullptr, M_NO_CONFIG);
+        mqtt->registerNodeTopic(nodeId + T_BATTERY, nullptr, M_OFF);
+
+
         DEBUG << "register node " << nodeId << " connectedNodes is" << connectedNodes;
     }
 }
@@ -144,7 +154,7 @@ void InukConnector::disconnectNode(QString nodeId, bool isGateWay)
     }
     else {
         connectedNodes.removeOne(nodeId);
-        mqtt->unregisterNodeTopic(nodeId);
+        mqtt->unregisterNodeTopic(nodeId + T_STATUS, M_DISCONNECTED);
         DEBUG << "unregsiter node " << nodeId << " connectedNodes is " << connectedNodes;
     }
 }
@@ -166,8 +176,9 @@ void InukConnector::printJSON(QJsonObject &json)
     QString nodeId = QString::number(GET_NODE_ID(json));
 
     if (!nodeId.isEmpty()) {
+        // TODO handle topic like /pir, /light etc.
         if (connectedNodes.contains(nodeId)) {
-            mqtt->publishNode( '/' + nodeId + AT_UART_RX, msg);
+            mqtt->publishNode(nodeId + T_UART_RX, msg);
         }
     }
     else {

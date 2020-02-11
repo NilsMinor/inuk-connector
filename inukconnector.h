@@ -29,7 +29,7 @@ private:
 
     friend void cb_restartApplication (QObject * Sender, QString &topic, QString &msg);
     friend void cb_sendUartMessage (QObject * Sender, QString &topic, QString &msg);
-    friend void cb_sendUartCommand (QObject * Sender, QString &topic, QString &msg);
+    friend void cb_sendMessageToNode (QObject * Sender, QString &topic, QString &msg);
 
     QString getNodeId (QString topic);
 

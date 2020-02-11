@@ -42,18 +42,21 @@ void InukMQTT::registerGatewayTopic(QString topic, CallbackDataT *callback)
     this->registerTopic(GW_TOPIC + top, callback);
 }
 
-void InukMQTT::registerNodeTopic(QString topic, CallbackDataT *callback)
+void InukMQTT::registerNodeTopic(QString topic, CallbackDataT *callback, QString initMsg)
 {
-    QString m ="subscribed";
-    QString top = "/" + topic;
-    this->publishNode(top, m);
-    this->registerTopic(NODES_TOPIC + top, callback);
+    if (!initMsg.isEmpty()) {
+        this->publishNode(topic, initMsg);
+    }
+
+    this->registerTopic(NODES_TOPIC + "/"+ topic, callback);
 }
 
-void InukMQTT::unregisterNodeTopic(QString topic)
+void InukMQTT::unregisterNodeTopic(QString topic, QString msg)
 {
-    QString m ="unsubscribed";
-    this->publishNode("/"+topic, m);
+
+    if (!msg.isEmpty()) {
+        this->publishNode(topic, msg);
+    }
     client->unsubscribe(topic);
 }
 
@@ -132,9 +135,9 @@ void InukMQTT::publishGateway(QString topic, QString &msg)
     client->publish(message);
 }
 
-void InukMQTT::publishNode(QString topic, QString& msg)
+void InukMQTT::publishNode(QString topic, QString msg)
 {
-    QMQTT::Message message(0, NODES_TOPIC + topic, QString(msg).toUtf8());
+    QMQTT::Message message(0, NODES_TOPIC + "/" + topic, QString(msg).toUtf8());
     client->publish(message);
 }
 

@@ -52,9 +52,26 @@ const QString NODE_SUB_TOPIC                = "/nodes";
 const QString AT_RESTART                    = "/restart";
 const QString AT_UART_TX                    = "/uart-tx";
 const QString AT_UART_RX                    = "/uart-rx";
-const QString AT_MESH_CMD                   = "/mesh-cmd";
 
-const QString ST_STATUS                     = "/status";
+
+const QString T_STATUS                      = "/status";
+const QString T_UART_TX                     = "/uart-tx";
+const QString T_UART_RX                     = "/uart-rx";
+const QString T_PIR                         = "/pir";
+const QString T_LIGHT                       = "/light";
+const QString T_SOLAR                       = "/solar";
+const QString T_BATTERY                     = "/battery";
+const QString T_CONFIG                      = "/config";
+
+
+const QString M_CONNECTED                   = "connected";
+const QString M_DISCONNECTED                = "disconnected";
+const QString M_OFF                         = "off";
+const QString M_ON                          = "on";
+const QString M_NO_CONFIG                   = "no config";
+const QString M_UART_RDY                    = "uart ready";
+
+
 // MAIN TOPICS
 const QString GW_TOPIC                      = MAIN_TOPIC + GW_SUB_TOPIC;
 const QString NODES_TOPIC                   = MAIN_TOPIC + NODE_SUB_TOPIC;
@@ -75,8 +92,8 @@ public:
     void startConnecting(qint16 timeout = 5000);
 
     void registerGatewayTopic (QString topic, CallbackDataT *callback);
-    void registerNodeTopic (QString topic, CallbackDataT *callback);
-    void unregisterNodeTopic(QString topic);
+    void registerNodeTopic (QString topic, CallbackDataT *callback, QString initMsg="");
+    void unregisterNodeTopic(QString topic, QString msg="");
 
     void sendDebugMsg(QString msg);
     QObject * _parent;
@@ -100,7 +117,7 @@ signals:
 public slots:
 
     void publishGateway (QString topic, QString& msg);
-    void publishNode (QString topic, QString &msg);
+    void publishNode (QString topic, QString msg);
 
 private slots:
     void conectToHost();
